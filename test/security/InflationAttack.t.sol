@@ -10,6 +10,7 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 contract MockERC20 is ERC20 {
     constructor() ERC20("Mock Token", "MOCK") {}
+
     function mint(address to, uint256 amount) external {
         _mint(to, amount);
     }
@@ -79,7 +80,7 @@ contract InflationAttackTest is Test {
         uint256 minShares = vault.MINIMUM_SHARES();
         vm.prank(attacker);
         uint256 attackerShares = vault.deposit(minShares);
-        
+
         console.log("Attacker forced to deposit:", vault.MINIMUM_SHARES());
         console.log("Attacker got shares:", attackerShares);
 
@@ -96,7 +97,7 @@ contract InflationAttackTest is Test {
 
         // ✅ 验证：受害者获得了合理的 shares（不是 0）
         assertGt(victimShares, 0, "Victim should get non-zero shares");
-        
+
         // 由于捐赠不影响 totalAssets，受害者应该获得接近 1:1 的 shares
         assertGt(victimShares, 9_000e18, "Victim should get fair shares");
     }
@@ -137,8 +138,7 @@ contract InflationAttackTest is Test {
         // ✅ 验证：受害者没有损失
         vm.prank(victim);
         uint256 victimReturned = vault.redeem(victimShares);
-        assertApproxEqRel(victimReturned, victimDeposit, 0.01e18,
-            "Victim gets back their deposit");
+        assertApproxEqRel(victimReturned, victimDeposit, 0.01e18, "Victim gets back their deposit");
     }
 
     /**
@@ -152,36 +152,28 @@ contract InflationAttackTest is Test {
 
         // 尝试不同的首次存款金额
         uint256[] memory testAmounts = new uint256[](5);
-        testAmounts[0] = 1;                    // 1 wei
-        testAmounts[1] = minShares / 2;        // 一半
-        testAmounts[2] = minShares - 1;        // 刚好差 1
-        testAmounts[3] = minShares;            // 恰好等于
-        testAmounts[4] = minShares * 2;        // 2 倍
+        testAmounts[0] = 1; // 1 wei
+        testAmounts[1] = minShares / 2; // 一半
+        testAmounts[2] = minShares - 1; // 刚好差 1
+        testAmounts[3] = minShares; // 恰好等于
+        testAmounts[4] = minShares * 2; // 2 倍
 
         for (uint256 i = 0; i < testAmounts.length; i++) {
             // 每次循环创建新的部署者地址
             address deployer = address(uint160(1000 + i));
-            
+
             // 以 deployer 身份创建所有合约
             vm.startPrank(deployer);
-            
+
             VaultToken newVaultToken = new VaultToken("Test", "TEST");
-            
-            MinimalVault newVault = new MinimalVault(
-                address(asset), 
-                address(newVaultToken), 
-                8000
-            );
-            
+
+            MinimalVault newVault = new MinimalVault(address(asset), address(newVaultToken), 8000);
+
             // 现在设置 vault
             newVaultToken.setVault(address(newVault));
 
-            MockStrategy newStrategy = new MockStrategy(
-                address(newVault), 
-                address(asset), 
-                1000
-            );
-            
+            MockStrategy newStrategy = new MockStrategy(address(newVault), address(asset), 1000);
+
             newVault.setStrategy(address(newStrategy));
             vm.stopPrank();
 
@@ -190,7 +182,7 @@ contract InflationAttackTest is Test {
             asset.approve(address(newVault), type(uint256).max);
 
             uint256 testAmount = testAmounts[i];
-            
+
             vm.prank(attacker);
             if (testAmount < minShares) {
                 // 应该 revert
@@ -208,10 +200,7 @@ contract InflationAttackTest is Test {
     /**
      * @notice Fuzz 测试：各种首次存款金额
      */
-    function testFuzz_inflationAttack_variousFirstDeposits(
-        uint256 firstDeposit,
-        uint256 donationAmount
-    ) public {
+    function testFuzz_inflationAttack_variousFirstDeposits(uint256 firstDeposit, uint256 donationAmount) public {
         firstDeposit = bound(firstDeposit, vault.MINIMUM_SHARES(), ATTACKER_BALANCE / 4);
         donationAmount = bound(donationAmount, 1e18, ATTACKER_BALANCE / 4);
 
@@ -263,7 +252,7 @@ contract InflationAttackTest is Test {
         // 实际验证 - 使用 attacker 身份
         vm.startPrank(attacker);
         uint256 shares = vault.deposit(vault.MINIMUM_SHARES());
-        
+
         asset.transfer(address(vault), 100_000e18);
         vm.stopPrank();
 
@@ -272,7 +261,7 @@ contract InflationAttackTest is Test {
 
         console.log("\nActual result:");
         console.log("Victim shares:", victimShares);
-        
+
         assertGt(victimShares, 0, "Protection works: victim gets shares");
     }
 }

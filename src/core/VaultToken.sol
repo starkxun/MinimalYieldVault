@@ -10,7 +10,6 @@ import "@openzeppelin/contracts/access/Ownable.sol";
  * @dev 模块1: 只有 Vault 合约可以 mint/burn shares
  */
 contract VaultToken is ERC20, Ownable {
-    
     /// @notice 记录 Vault 地址（只有它能 mint/burn）
     address public vault;
 
@@ -26,10 +25,7 @@ contract VaultToken is ERC20, Ownable {
     error ZeroAddress();
 
     // ============ Constructor ============
-    constructor(
-        string memory name,
-        string memory symbol
-    ) ERC20(name, symbol) Ownable(msg.sender) {}
+    constructor(string memory name, string memory symbol) ERC20(name, symbol) Ownable(msg.sender) {}
 
     // ============ Modifiers ============
     modifier onlyVault() {
@@ -46,10 +42,10 @@ contract VaultToken is ERC20, Ownable {
     function setVault(address _vault) external onlyOwner {
         if (vaultInitialized) revert VaultAlreadySet();
         if (_vault == address(0)) revert ZeroAddress();
-        
+
         vault = _vault;
         vaultInitialized = true;
-        
+
         emit VaultSet(_vault);
     }
 

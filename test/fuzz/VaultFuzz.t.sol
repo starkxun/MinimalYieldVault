@@ -9,6 +9,7 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 contract MockERC20 is ERC20 {
     constructor() ERC20("Mock Token", "MOCK") {}
+
     function mint(address to, uint256 amount) external {
         _mint(to, amount);
     }
@@ -74,10 +75,7 @@ contract VaultFuzzTest is Test {
         assertGe(vault.totalAssets(), amount);
     }
 
-    function testFuzz_deposit_multipleUsers(
-        uint256 amount1,
-        uint256 amount2
-    ) public {
+    function testFuzz_deposit_multipleUsers(uint256 amount1, uint256 amount2) public {
         amount1 = bound(amount1, vault.MINIMUM_SHARES(), MAX_SUPPLY / 2);
         amount2 = bound(amount2, vault.MINIMUM_SHARES(), MAX_SUPPLY / 2);
 
@@ -111,10 +109,7 @@ contract VaultFuzzTest is Test {
         assertGe(assetsReturned, depositAmount);
     }
 
-    function testFuzz_partialRedeem(
-        uint256 depositAmount,
-        uint256 redeemRatio
-    ) public {
+    function testFuzz_partialRedeem(uint256 depositAmount, uint256 redeemRatio) public {
         depositAmount = bound(depositAmount, vault.MINIMUM_SHARES(), MAX_SUPPLY / 2);
         redeemRatio = bound(redeemRatio, 1, 100); // 1% 到 100%
 
@@ -133,10 +128,7 @@ contract VaultFuzzTest is Test {
 
     // ============ With Yield Fuzz Tests ============
 
-    function testFuzz_depositWithYield(
-        uint256 depositAmount,
-        uint256 timeElapsed
-    ) public {
+    function testFuzz_depositWithYield(uint256 depositAmount, uint256 timeElapsed) public {
         depositAmount = bound(depositAmount, vault.MINIMUM_SHARES(), MAX_SUPPLY / 4);
         timeElapsed = bound(timeElapsed, 1 days, 365 days);
 
@@ -179,10 +171,7 @@ contract VaultFuzzTest is Test {
         assertGt(priceAfter, 0);
     }
 
-    function testFuzz_sharePriceMonotonic(
-        uint256 depositAmount,
-        uint256 timeElapsed
-    ) public {
+    function testFuzz_sharePriceMonotonic(uint256 depositAmount, uint256 timeElapsed) public {
         depositAmount = bound(depositAmount, vault.MINIMUM_SHARES(), MAX_SUPPLY / 4);
         timeElapsed = bound(timeElapsed, 1 days, 365 days);
 
@@ -228,7 +217,7 @@ contract VaultFuzzTest is Test {
 
     function testFuzz_minimumDeposit(uint256 extra) public {
         extra = bound(extra, 0, 1000e18);
-        
+
         uint256 amount = vault.MINIMUM_SHARES() + extra;
 
         vm.prank(user1);
@@ -239,7 +228,7 @@ contract VaultFuzzTest is Test {
 
     function testFuzz_largeDeposit(uint256 multiplier) public {
         multiplier = bound(multiplier, 100, 1000);
-        
+
         uint256 amount = vault.MINIMUM_SHARES() * multiplier;
         if (amount > MAX_SUPPLY / 2) amount = MAX_SUPPLY / 2;
 
@@ -272,11 +261,7 @@ contract VaultFuzzTest is Test {
 
     // ============ Multiple Operations Fuzz Tests ============
 
-    function testFuzz_depositRedeemDepositRedeem(
-        uint256 amount1,
-        uint256 amount2,
-        uint256 redeemRatio
-    ) public {
+    function testFuzz_depositRedeemDepositRedeem(uint256 amount1, uint256 amount2, uint256 redeemRatio) public {
         amount1 = bound(amount1, vault.MINIMUM_SHARES(), MAX_SUPPLY / 4);
         amount2 = bound(amount2, vault.MINIMUM_SHARES(), MAX_SUPPLY / 4);
         redeemRatio = bound(redeemRatio, 10, 90);

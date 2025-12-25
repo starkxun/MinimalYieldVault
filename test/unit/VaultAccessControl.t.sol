@@ -10,7 +10,7 @@ import "../../src/access/VaultAccessControl.sol";
  */
 contract VaultAccessControlTest is Test {
     VaultAccessControl public accessControl;
-    
+
     address public owner = address(1);
     address public strategist = address(2);
     address public guardian = address(3);
@@ -217,12 +217,7 @@ contract VaultAccessControlTest is Test {
     // ============ View Functions Tests ============
 
     function test_getRoles() public view {
-        (
-            address owner_,
-            address strategist_,
-            address guardian_,
-            address keeper_
-        ) = accessControl.getRoles();
+        (address owner_, address strategist_, address guardian_, address keeper_) = accessControl.getRoles();
 
         assertEq(owner_, owner);
         assertEq(strategist_, strategist);
@@ -231,13 +226,8 @@ contract VaultAccessControlTest is Test {
     }
 
     function test_getAccessControlState() public view {
-        (
-            bool isPaused,
-            bool publicDeposits,
-            address strategist_,
-            address guardian_,
-            address keeper_
-        ) = accessControl.getAccessControlState();
+        (bool isPaused, bool publicDeposits, address strategist_, address guardian_, address keeper_) =
+            accessControl.getAccessControlState();
 
         assertFalse(isPaused);
         assertTrue(publicDeposits);

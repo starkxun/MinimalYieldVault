@@ -17,19 +17,19 @@ contract MinimalVault is ReentrancyGuard, Ownable {
     using SafeERC20 for IERC20;
 
     // ============ State Variables ============
-    
+
     /// @notice 底层资产（如 USDC）
     IERC20 public immutable asset;
-    
+
     /// @notice Vault shares token
     VaultToken public immutable shares;
-    
+
     /// @notice 当前活跃的 Strategy
     BaseStrategy public strategy;
-    
+
     /// @notice Vault 中的闲置资产（未投资到 Strategy）
     uint256 public totalIdleAssets;
-    
+
     /// @notice Strategy 中投资的资产
     uint256 public totalInvestedAssets;
 
@@ -38,10 +38,10 @@ contract MinimalVault is ReentrancyGuard, Ownable {
 
     /// @notice 是否已完成首次存款
     bool public initialized;
-    
+
     /// @notice 投资比例（基点，10000 = 100%）
     uint256 public investRatioBps;
-    
+
     /// @notice 最大投资比例
     uint256 public constant MAX_INVEST_RATIO = 9500; // 95%
 
@@ -65,14 +65,10 @@ contract MinimalVault is ReentrancyGuard, Ownable {
     error InvalidStrategy();
 
     // ============ Constructor ============
-    constructor(
-        address _asset, 
-        address _shares,
-        uint256 _investRatioBps
-    ) Ownable(msg.sender) {
+    constructor(address _asset, address _shares, uint256 _investRatioBps) Ownable(msg.sender) {
         asset = IERC20(_asset);
         shares = VaultToken(_shares);
-        
+
         if (_investRatioBps > MAX_INVEST_RATIO) revert InvalidInvestRatio();
         investRatioBps = _investRatioBps;
     }
@@ -123,7 +119,7 @@ contract MinimalVault is ReentrancyGuard, Ownable {
         // 计算能取回多少资产
         assetsAmount = previewRedeem(sharesAmount);
         if (assetsAmount == 0) revert ZeroShares();
-        
+
         uint256 totalAvailable = totalAssets();
         if (assetsAmount > totalAvailable) revert InsufficientAssets();
 
@@ -166,18 +162,18 @@ contract MinimalVault is ReentrancyGuard, Ownable {
      */
     function setStrategy(address _strategy) external onlyOwner {
         if (_strategy == address(0)) revert InvalidStrategy();
-        
+
         address oldStrategy = address(strategy);
-        
+
         // 如果之前有 Strategy，先取回所有资金
         if (oldStrategy != address(0)) {
             uint256 withdrawn = strategy.emergencyWithdraw();
             totalInvestedAssets = 0;
             totalIdleAssets += withdrawn;
         }
-        
+
         strategy = BaseStrategy(_strategy);
-        
+
         emit StrategySet(oldStrategy, _strategy);
     }
 
@@ -200,16 +196,16 @@ contract MinimalVault is ReentrancyGuard, Ownable {
     function _autoInvest() internal {
         if (address(strategy) == address(0)) return;
         if (!strategy.isActive()) return;
-        
+
         uint256 total = totalAssets();
         uint256 targetInvested = (total * investRatioBps) / MAX_BPS;
-        
+
         if (targetInvested > totalInvestedAssets) {
             uint256 toInvest = targetInvested - totalInvestedAssets;
             if (toInvest > totalIdleAssets) {
                 toInvest = totalIdleAssets;
             }
-            
+
             if (toInvest > 0) {
                 _investAmount(toInvest);
             }
@@ -221,17 +217,17 @@ contract MinimalVault is ReentrancyGuard, Ownable {
      */
     function _investAmount(uint256 amount) internal {
         if (amount == 0) return;
-        
+
         // 授权 Strategy
         asset.approve(address(strategy), amount);
-        
+
         // 调用 Strategy 的 invest
         strategy.invest(amount);
-        
+
         // 更新状态
         totalIdleAssets -= amount;
         totalInvestedAssets += amount;
-        
+
         emit Invested(amount);
     }
 
@@ -241,9 +237,9 @@ contract MinimalVault is ReentrancyGuard, Ownable {
     function _invest() internal {
         if (address(strategy) == address(0)) return;
         if (!strategy.isActive()) return;
-        
+
         uint256 toInvest = (totalIdleAssets * investRatioBps) / MAX_BPS;
-        
+
         if (toInvest > 0) {
             _investAmount(toInvest);
         }
@@ -254,17 +250,17 @@ contract MinimalVault is ReentrancyGuard, Ownable {
      */
     function _withdrawFromStrategy(uint256 amount) internal {
         if (address(strategy) == address(0)) return;
-        
+
         // 不能取回超过 Strategy 实际投资的资产
         uint256 toWithdraw = amount;
         if (toWithdraw > totalInvestedAssets) {
             toWithdraw = totalInvestedAssets;
         }
-        
+
         if (toWithdraw == 0) return;
-        
+
         uint256 withdrawn = strategy.withdraw(toWithdraw);
-        
+
         totalInvestedAssets -= withdrawn;
         totalIdleAssets += withdrawn;
     }
@@ -275,19 +271,17 @@ contract MinimalVault is ReentrancyGuard, Ownable {
     function _harvest() internal {
         if (address(strategy) == address(0)) return;
         if (!strategy.isActive()) return;
-        
+
         (uint256 profit, uint256 loss) = strategy.harvest();
-        
+
         if (profit > loss) {
             uint256 netProfit = profit - loss;
             totalInvestedAssets += netProfit;
         } else if (loss > profit) {
             uint256 netLoss = loss - profit;
-            totalInvestedAssets = totalInvestedAssets > netLoss 
-                ? totalInvestedAssets - netLoss 
-                : 0;
+            totalInvestedAssets = totalInvestedAssets > netLoss ? totalInvestedAssets - netLoss : 0;
         }
-        
+
         emit Harvested(profit, loss);
     }
 
@@ -297,10 +291,8 @@ contract MinimalVault is ReentrancyGuard, Ownable {
      * @notice 获取 Vault 的总资产
      */
     function totalAssets() public view returns (uint256) {
-        uint256 strategyAssets = address(strategy) != address(0) 
-            ? strategy.totalAssets() 
-            : 0;
-        
+        uint256 strategyAssets = address(strategy) != address(0) ? strategy.totalAssets() : 0;
+
         return totalIdleAssets + strategyAssets;
     }
 
@@ -309,11 +301,11 @@ contract MinimalVault is ReentrancyGuard, Ownable {
      */
     function previewDeposit(uint256 assets) public view returns (uint256) {
         uint256 supply = shares.totalSupply();
-        
+
         if (supply == 0) {
             return assets;
         }
-        
+
         return (assets * supply) / totalAssets();
     }
 
@@ -322,11 +314,11 @@ contract MinimalVault is ReentrancyGuard, Ownable {
      */
     function previewRedeem(uint256 sharesAmount) public view returns (uint256) {
         uint256 supply = shares.totalSupply();
-        
+
         if (supply == 0) {
             return 0;
         }
-        
+
         return (sharesAmount * totalAssets()) / supply;
     }
 
@@ -352,12 +344,11 @@ contract MinimalVault is ReentrancyGuard, Ownable {
     /**
      * @notice 获取 Strategy 信息
      */
-    function getStrategyInfo() external view returns (
-        address strategyAddress,
-        bool isStrategyActive,
-        uint256 investedAmount,
-        uint256 strategyTotalAssets
-    ) {
+    function getStrategyInfo()
+        external
+        view
+        returns (address strategyAddress, bool isStrategyActive, uint256 investedAmount, uint256 strategyTotalAssets)
+    {
         strategyAddress = address(strategy);
         isStrategyActive = strategyAddress != address(0) && strategy.isActive();
         investedAmount = totalInvestedAssets;

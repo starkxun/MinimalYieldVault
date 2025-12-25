@@ -9,6 +9,7 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 contract MockERC20 is ERC20 {
     constructor() ERC20("Mock Token", "MOCK") {}
+
     function mint(address to, uint256 amount) external {
         _mint(to, amount);
     }
@@ -21,34 +22,34 @@ contract MockERC20 is ERC20 {
 contract MaliciousToken is ERC20 {
     address public targetVault;
     bool public attacking;
-    
+
     constructor() ERC20("Malicious Token", "MAL") {}
-    
+
     function mint(address to, uint256 amount) external {
         _mint(to, amount);
     }
-    
+
     function setTarget(address _vault) external {
         targetVault = _vault;
     }
-    
+
     function startAttack() external {
         attacking = true;
     }
-    
+
     function stopAttack() external {
         attacking = false;
     }
-    
+
     // 在 transfer 时尝试重入
     function transfer(address to, uint256 amount) public override returns (bool) {
         bool success = super.transfer(to, amount);
-        
+
         if (attacking && to == targetVault) {
             // 尝试重入 redeem
             try MinimalVault(targetVault).redeem(1) {} catch {}
         }
-        
+
         return success;
     }
 }
@@ -61,27 +62,27 @@ contract ReentrancyAttacker {
     MinimalVault public vault;
     VaultToken public vaultToken;
     IERC20 public asset;
-    
+
     bool public attacking;
     uint256 public attackCount;
-    
+
     constructor(address _vault, address _vaultToken, address _asset) {
         vault = MinimalVault(_vault);
         vaultToken = VaultToken(_vaultToken);
         asset = IERC20(_asset);
     }
-    
+
     function deposit(uint256 amount) external {
         asset.approve(address(vault), amount);
         vault.deposit(amount);
     }
-    
+
     function startAttack(uint256 shares) external {
         attacking = true;
         attackCount = 0;
         vault.redeem(shares);
     }
-    
+
     // ERC20 接收回调（模拟）
     receive() external payable {
         if (attacking && attackCount < 3) {
@@ -116,7 +117,7 @@ contract ReentrancyAttackTest is Test {
     function setUp() public {
         // 使用 MockERC20（在文件顶部定义的）
         asset = new MockERC20();
-        
+
         vm.prank(owner);
         vaultToken = new VaultToken("Vault Shares", "vShares");
 
@@ -143,15 +144,15 @@ contract ReentrancyAttackTest is Test {
         // 我们通过尝试在同一个调用栈中多次调用来测试
 
         deal(address(asset), attacker, INITIAL_BALANCE);
-        
+
         vm.startPrank(attacker);
         asset.approve(address(vault), INITIAL_BALANCE);
         uint256 shares = vault.deposit(10_000e18);
-        
+
         // 正常的 redeem 应该成功
         uint256 returned = vault.redeem(shares / 2);
         assertGt(returned, 0, "Normal redeem works");
-        
+
         console.log("ReentrancyGuard is active");
         console.log("Nested calls would be blocked");
         vm.stopPrank();
@@ -162,16 +163,16 @@ contract ReentrancyAttackTest is Test {
      */
     function test_reentrancyAttack_depositAlsoProtected() public {
         console.log("=== Testing deposit ReentrancyGuard ===");
-        
+
         deal(address(asset), attacker, INITIAL_BALANCE);
-        
+
         vm.startPrank(attacker);
         asset.approve(address(vault), INITIAL_BALANCE);
-        
+
         // 正常的 deposit 应该成功
         uint256 shares = vault.deposit(10_000e18);
         assertGt(shares, 0, "Normal deposit works");
-        
+
         console.log("deposit() has ReentrancyGuard protection");
         console.log("Nested calls would be blocked");
         vm.stopPrank();
@@ -197,15 +198,15 @@ contract ReentrancyAttackTest is Test {
 
         vm.startPrank(user);
         asset.approve(address(vault), INITIAL_BALANCE);
-        
+
         // 正常 deposit
         uint256 shares = vault.deposit(10_000e18);
         assertGt(shares, 0, "Normal deposit works");
-        
+
         // 正常 redeem
         uint256 returned = vault.redeem(shares);
         assertGt(returned, 0, "Normal redeem works");
-        
+
         console.log("Normal operations work fine with ReentrancyGuard");
         vm.stopPrank();
     }

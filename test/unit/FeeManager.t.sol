@@ -10,13 +10,13 @@ import "../../src/fees/FeeManager.sol";
  */
 contract FeeManagerTest is Test {
     FeeManager public feeManager;
-    
+
     address public owner = address(1);
     address public feeRecipient = address(2);
     address public user = address(3);
 
     uint256 constant PERFORMANCE_FEE = 2000; // 20%
-    uint256 constant WITHDRAWAL_FEE = 100;   // 1%
+    uint256 constant WITHDRAWAL_FEE = 100; // 1%
 
     function setUp() public {
         vm.prank(owner);
@@ -57,7 +57,7 @@ contract FeeManagerTest is Test {
     function test_calculatePerformanceFee() public view {
         uint256 profit = 1000e18;
         uint256 fee = feeManager.calculatePerformanceFee(profit);
-        
+
         // 20% of 1000 = 200
         assertEq(fee, 200e18);
     }
@@ -77,7 +77,7 @@ contract FeeManagerTest is Test {
 
     function test_setPerformanceFee() public {
         uint256 newFee = 1000; // 10%
-        
+
         vm.prank(owner);
         feeManager.setPerformanceFee(newFee);
 
@@ -111,7 +111,7 @@ contract FeeManagerTest is Test {
     function test_calculateWithdrawalFee() public view {
         uint256 amount = 1000e18;
         uint256 fee = feeManager.calculateWithdrawalFee(amount);
-        
+
         // 1% of 1000 = 10
         assertEq(fee, 10e18);
     }
@@ -126,7 +126,7 @@ contract FeeManagerTest is Test {
 
     function test_setWithdrawalFee() public {
         uint256 newFee = 50; // 0.5%
-        
+
         vm.prank(owner);
         feeManager.setWithdrawalFee(newFee);
 
@@ -191,13 +191,8 @@ contract FeeManagerTest is Test {
     // ============ View Functions Tests ============
 
     function test_getFeeConfiguration() public view {
-        (
-            uint256 perfFeeBps,
-            uint256 withdrawFeeBps,
-            address recipient,
-            bool perfEnabled,
-            bool withdrawEnabled
-        ) = feeManager.getFeeConfiguration();
+        (uint256 perfFeeBps, uint256 withdrawFeeBps, address recipient, bool perfEnabled, bool withdrawEnabled) =
+            feeManager.getFeeConfiguration();
 
         assertEq(perfFeeBps, PERFORMANCE_FEE);
         assertEq(withdrawFeeBps, WITHDRAWAL_FEE);
@@ -212,11 +207,7 @@ contract FeeManagerTest is Test {
         feeManager.recordWithdrawalFee(10e18, 1000e18);
         vm.stopPrank();
 
-        (
-            uint256 performanceFees,
-            uint256 withdrawalFees,
-            uint256 totalFees
-        ) = feeManager.getTotalFeesCollected();
+        (uint256 performanceFees, uint256 withdrawalFees, uint256 totalFees) = feeManager.getTotalFeesCollected();
 
         assertEq(performanceFees, 100e18);
         assertEq(withdrawalFees, 10e18);
@@ -227,18 +218,18 @@ contract FeeManagerTest is Test {
 
     function testFuzz_calculatePerformanceFee(uint256 profit) public view {
         profit = bound(profit, 0, type(uint128).max);
-        
+
         uint256 fee = feeManager.calculatePerformanceFee(profit);
-        
+
         // Fee 应该 <= profit * 50%
         assertLe(fee, profit / 2);
     }
 
     function testFuzz_calculateWithdrawalFee(uint256 amount) public view {
         amount = bound(amount, 0, type(uint128).max);
-        
+
         uint256 fee = feeManager.calculateWithdrawalFee(amount);
-        
+
         // Fee 应该 <= amount * 5%
         assertLe(fee, amount * 5 / 100);
     }

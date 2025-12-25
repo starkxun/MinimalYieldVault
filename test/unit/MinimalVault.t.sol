@@ -156,7 +156,7 @@ contract MinimalVaultTest is Test {
     function test_previewDeposit_firstDeposit() public view {
         uint256 assets = 1000e18;
         uint256 expectedShares = vault.previewDeposit(assets);
-        
+
         assertEq(expectedShares, assets); // 1:1
     }
 

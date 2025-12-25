@@ -10,21 +10,20 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
  * @dev 管理 Vault 的多角色权限和紧急暂停
  */
 contract VaultAccessControl is Ownable, Pausable {
-    
     // ============ State Variables ============
-    
+
     /// @notice Strategist 地址（管理投资策略）
     address public strategist;
-    
+
     /// @notice Guardian 地址（紧急暂停权限）
     address public guardian;
-    
+
     /// @notice Keeper 地址（自动化操作）
     address public keeper;
-    
+
     /// @notice 是否允许公开 deposit（任何人都能存款）
     bool public publicDepositsEnabled;
-    
+
     /// @notice 白名单用户（当 publicDeposits 关闭时）
     mapping(address => bool) public whitelisted;
 
@@ -46,7 +45,7 @@ contract VaultAccessControl is Ownable, Pausable {
     error ZeroAddress();
 
     // ============ Modifiers ============
-    
+
     modifier onlyStrategist() {
         if (msg.sender != strategist) revert OnlyStrategist();
         _;
@@ -84,15 +83,11 @@ contract VaultAccessControl is Ownable, Pausable {
     }
 
     // ============ Constructor ============
-    constructor(
-        address _strategist,
-        address _guardian,
-        address _keeper
-    ) Ownable(msg.sender) {
+    constructor(address _strategist, address _guardian, address _keeper) Ownable(msg.sender) {
         if (_strategist == address(0)) revert ZeroAddress();
         if (_guardian == address(0)) revert ZeroAddress();
         if (_keeper == address(0)) revert ZeroAddress();
-        
+
         strategist = _strategist;
         guardian = _guardian;
         keeper = _keeper;
@@ -107,10 +102,10 @@ contract VaultAccessControl is Ownable, Pausable {
      */
     function setStrategist(address _strategist) external onlyOwner {
         if (_strategist == address(0)) revert ZeroAddress();
-        
+
         address oldStrategist = strategist;
         strategist = _strategist;
-        
+
         emit StrategistUpdated(oldStrategist, _strategist);
     }
 
@@ -120,10 +115,10 @@ contract VaultAccessControl is Ownable, Pausable {
      */
     function setGuardian(address _guardian) external onlyOwner {
         if (_guardian == address(0)) revert ZeroAddress();
-        
+
         address oldGuardian = guardian;
         guardian = _guardian;
-        
+
         emit GuardianUpdated(oldGuardian, _guardian);
     }
 
@@ -133,10 +128,10 @@ contract VaultAccessControl is Ownable, Pausable {
      */
     function setKeeper(address _keeper) external onlyOwner {
         if (_keeper == address(0)) revert ZeroAddress();
-        
+
         address oldKeeper = keeper;
         keeper = _keeper;
-        
+
         emit KeeperUpdated(oldKeeper, _keeper);
     }
 
@@ -206,31 +201,22 @@ contract VaultAccessControl is Ownable, Pausable {
     /**
      * @notice 获取所有角色地址
      */
-    function getRoles() external view returns (
-        address owner_,
-        address strategist_,
-        address guardian_,
-        address keeper_
-    ) {
+    function getRoles()
+        external
+        view
+        returns (address owner_, address strategist_, address guardian_, address keeper_)
+    {
         return (owner(), strategist, guardian, keeper);
     }
 
     /**
      * @notice 获取访问控制状态
      */
-    function getAccessControlState() external view returns (
-        bool isPaused,
-        bool publicDeposits,
-        address strategist_,
-        address guardian_,
-        address keeper_
-    ) {
-        return (
-            paused(),
-            publicDepositsEnabled,
-            strategist,
-            guardian,
-            keeper
-        );
+    function getAccessControlState()
+        external
+        view
+        returns (bool isPaused, bool publicDeposits, address strategist_, address guardian_, address keeper_)
+    {
+        return (paused(), publicDepositsEnabled, strategist, guardian, keeper);
     }
 }

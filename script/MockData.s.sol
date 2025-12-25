@@ -18,7 +18,7 @@ interface IERC20 {
  * @notice 创建测试数据和场景，方便前端测试
  * @dev 使用方法:
  *      forge script script/MockData.s.sol --rpc-url http://localhost:8545 --broadcast
- * 
+ *
  * 这个脚本会:
  * 1. 给多个测试账户 mint 代币
  * 2. 模拟一些用户存款
@@ -122,10 +122,10 @@ contract MockData is Script {
     function simulateUserDeposits() internal {
         // USER1 存 1000
         depositAs(USER1, 1000 * 1e18);
-        
+
         // USER2 存 2500
         depositAs(USER2, 2500 * 1e18);
-        
+
         // USER3 存 500
         depositAs(USER3, 500 * 1e18);
 
@@ -139,13 +139,13 @@ contract MockData is Script {
     function depositAs(address user, uint256 amount) internal {
         // 获取用户的私钥（仅用于测试）
         uint256 userKey = getUserPrivateKey(user);
-        
+
         vm.stopBroadcast();
         vm.startBroadcast(userKey);
 
         // Approve
         asset.approve(address(vault), amount);
-        
+
         // Deposit
         vault.deposit(amount);
 
@@ -172,9 +172,9 @@ contract MockData is Script {
      */
     function simulateYieldGeneration() internal {
         uint256 yieldAmount = 200 * 1e18; // 200 代币收益（5% APY）
-        
+
         asset.mint(address(vault), yieldAmount);
-        
+
         console.log("  Generated yield: %s tokens", yieldAmount / 1e18);
         console.log("  New TVL: %s tokens", vault.totalAssets() / 1e18);
         console.log("  Share price: %s", vault.sharePrice() / 1e18);
@@ -188,7 +188,7 @@ contract MockData is Script {
         console.log("===========================================");
         console.log("Test Accounts Information");
         console.log("===========================================");
-        
+
         printAccountInfo("Deployer", DEPLOYER);
         printAccountInfo("User 1", USER1);
         printAccountInfo("User 2", USER2);
@@ -219,9 +219,7 @@ contract MockData is Script {
     function printAccountInfo(string memory name, address account) internal view {
         uint256 assetBalance = asset.balanceOf(account);
         uint256 shareBalance = vaultToken.balanceOf(account);
-        uint256 positionValue = shareBalance > 0 
-            ? (shareBalance * vault.sharePrice()) / 1e18 
-            : 0;
+        uint256 positionValue = shareBalance > 0 ? (shareBalance * vault.sharePrice()) / 1e18 : 0;
 
         console.log("");
         console.log("%s (%s):", name, account);

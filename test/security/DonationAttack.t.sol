@@ -9,6 +9,7 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 contract MockERC20 is ERC20 {
     constructor() ERC20("Mock Token", "MOCK") {}
+
     function mint(address to, uint256 amount) external {
         _mint(to, amount);
     }
@@ -86,8 +87,7 @@ contract DonationAttackTest is Test {
 
         // ✅ 关键验证：捐赠不应该影响 share price
         // 因为 totalAssets() 是基于 Vault 的会计系统，而不是简单的 balanceOf
-        assertEq(sharePriceAfterDonation, 1e18, 
-            "Share price should remain 1:1 despite donation");
+        assertEq(sharePriceAfterDonation, 1e18, "Share price should remain 1:1 despite donation");
 
         // 4. 受害者存款
         vm.prank(victim);
@@ -95,8 +95,7 @@ contract DonationAttackTest is Test {
         console.log("Victim deposits 10000e18, gets shares:", victimShares);
 
         // ✅ 验证：受害者应该获得公平的 shares（1:1）
-        assertEq(victimShares, 10_000e18, 
-            "Victim should get fair shares despite attacker's donation");
+        assertEq(victimShares, 10_000e18, "Victim should get fair shares despite attacker's donation");
 
         // 5. 攻击者尝试赎回
         vm.prank(attacker);
@@ -107,8 +106,7 @@ contract DonationAttackTest is Test {
         // 攻击者花费：1e18 (deposit) + 100_000e18 (donation) = 100_001e18
         // 攻击者获得：约 1e18
         // 攻击损失：约 100_000e18
-        assertLt(attackerReturned, 2e18, 
-            "Attacker should not profit from donation attack");
+        assertLt(attackerReturned, 2e18, "Attacker should not profit from donation attack");
 
         console.log("Attack cost:", 1e18 + donationAmount);
         console.log("Attack gain:", attackerReturned);
@@ -135,17 +133,16 @@ contract DonationAttackTest is Test {
         uint256 vaultBalanceAfter = asset.balanceOf(address(vault));
 
         // ✅ Vault 余额增加了
-        assertEq(vaultBalanceAfter, vaultBalanceBefore + donationAmount,
-            "Vault balance should increase by donation amount");
+        assertEq(
+            vaultBalanceAfter, vaultBalanceBefore + donationAmount, "Vault balance should increase by donation amount"
+        );
 
         // ✅ 但 totalIdleAssets 没有增加（因为没有通过 deposit）
-        assertEq(idleAfter, idleBefore,
-            "totalIdleAssets should NOT increase from donation");
+        assertEq(idleAfter, idleBefore, "totalIdleAssets should NOT increase from donation");
 
         // ✅ totalAssets 也没有增加
         uint256 totalAssets = vault.totalAssets();
-        assertLt(totalAssets, vaultBalanceAfter,
-            "totalAssets should be less than actual vault balance");
+        assertLt(totalAssets, vaultBalanceAfter, "totalAssets should be less than actual vault balance");
     }
 
     /**
@@ -170,8 +167,9 @@ contract DonationAttackTest is Test {
         uint256 victimReturned = vault.redeem(victimShares);
 
         // ✅ 验证：受害者没有损失（允许精度误差）
-        assertApproxEqRel(victimReturned, victimDeposit, 0.001e18,
-            "Victim should get back their deposit despite donation");
+        assertApproxEqRel(
+            victimReturned, victimDeposit, 0.001e18, "Victim should get back their deposit despite donation"
+        );
     }
 
     /**
@@ -194,8 +192,7 @@ contract DonationAttackTest is Test {
 
         // ✅ 攻击者总是亏损的
         uint256 totalCost = 1e18 + donationAmount;
-        assertLt(returned, totalCost,
-            "Attacker should always lose money");
+        assertLt(returned, totalCost, "Attacker should always lose money");
     }
 
     /**
@@ -227,13 +224,12 @@ contract DonationAttackTest is Test {
         // ✅ 关键发现：
         // totalAssets 不是基于 balanceOf，而是基于内部会计
         // 所以捐赠的资产不会被计入 totalAssets
-        
+
         uint256 totalAssets = vault.totalAssets();
         uint256 vaultBalance = asset.balanceOf(address(vault));
-        
-        assertTrue(totalAssets < vaultBalance,
-            "totalAssets should be less than vault balance after donation");
-        
+
+        assertTrue(totalAssets < vaultBalance, "totalAssets should be less than vault balance after donation");
+
         console.log("\nDefense: totalAssets ignores donated funds!");
     }
 }

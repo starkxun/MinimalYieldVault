@@ -10,6 +10,7 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 contract MockERC20 is ERC20 {
     constructor() ERC20("Mock Token", "MOCK") {}
+
     function mint(address to, uint256 amount) external {
         _mint(to, amount);
     }
@@ -30,13 +31,7 @@ contract VaultHandler is Test {
     address[] public actors;
     address internal currentActor;
 
-    constructor(
-        MinimalVault _vault,
-        VaultToken _vaultToken,
-        MockStrategy _strategy,
-        MockERC20 _asset,
-        address _owner
-    ) {
+    constructor(MinimalVault _vault, VaultToken _vaultToken, MockStrategy _strategy, MockERC20 _asset, address _owner) {
         vault = _vault;
         vaultToken = _vaultToken;
         strategy = _strategy;
@@ -47,10 +42,10 @@ contract VaultHandler is Test {
         for (uint256 i = 0; i < 5; i++) {
             address actor = address(uint160(i + 100));
             actors.push(actor);
-            
+
             // 给用户 mint 资产
             asset.mint(actor, 1_000_000e18);
-            
+
             // 授权
             vm.prank(actor);
             asset.approve(address(vault), type(uint256).max);
@@ -70,9 +65,9 @@ contract VaultHandler is Test {
     function redeem(uint256 actorSeed, uint256 sharesPct) public {
         currentActor = actors[actorSeed % actors.length];
         uint256 shares = vaultToken.balanceOf(currentActor);
-        
+
         if (shares == 0) return;
-        
+
         sharesPct = bound(sharesPct, 1, 100);
         uint256 sharesToRedeem = (shares * sharesPct) / 100;
         if (sharesToRedeem == 0) sharesToRedeem = 1;
@@ -93,7 +88,7 @@ contract VaultHandler is Test {
     }
 
     function warp(uint256 timeJump) public {
-        timeJump = bound(timeJump, 1 hours, 7 days);  // 最多 7 天
+        timeJump = bound(timeJump, 1 hours, 7 days); // 最多 7 天
         vm.warp(block.timestamp + timeJump);
     }
 }
@@ -142,10 +137,7 @@ contract VaultInvariantsTest is Test {
         selectors[2] = VaultHandler.harvest.selector;
         selectors[3] = VaultHandler.warp.selector;
 
-        targetSelector(FuzzSelector({
-            addr: address(handler),
-            selectors: selectors
-        }));
+        targetSelector(FuzzSelector({addr: address(handler), selectors: selectors}));
     }
 
     // ============ 核心不变量 ============
@@ -159,20 +151,18 @@ contract VaultInvariantsTest is Test {
         uint256 totalAssets = vault.totalAssets();
         uint256 idleAssets = vault.totalIdleAssets();
         uint256 investedAssets = vault.totalInvestedAssets();
-        
+
         if (totalAssets == 0) return;
-        
+
         // totalAssets 应该至少包含 idle + invested（账面值）
-        assertGe(totalAssets, idleAssets + investedAssets, 
-            "totalAssets should be >= idle + invested");
-        
+        assertGe(totalAssets, idleAssets + investedAssets, "totalAssets should be >= idle + invested");
+
         // totalAssets 包含未收获收益
         // 最大收益估算：10% APY * 7 days = 0.19%
         // 考虑到 80% 投资比例：最多增加 0.15%
         // 为安全起见，允许 5% 的余地
         uint256 maxExpected = (idleAssets + investedAssets) * 105 / 100;
-        assertLe(totalAssets, maxExpected, 
-            "totalAssets should not exceed 1.05x of idle + invested");
+        assertLe(totalAssets, maxExpected, "totalAssets should not exceed 1.05x of idle + invested");
     }
 
     /**
@@ -251,7 +241,7 @@ contract VaultInvariantsTest is Test {
     }
 
     // ============ Ghost Variables（用于追踪状态）============
-    
+
     /**
      * @notice 记录调用统计
      */

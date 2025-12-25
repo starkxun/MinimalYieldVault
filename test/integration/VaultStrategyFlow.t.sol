@@ -10,6 +10,7 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 contract MockERC20 is ERC20 {
     constructor() ERC20("Mock Token", "MOCK") {}
+
     function mint(address to, uint256 amount) external {
         _mint(to, amount);
     }
@@ -79,7 +80,7 @@ contract VaultStrategyFlowTest is Test {
     function _simulateYieldGeneration() internal {
         // 计算预期收益
         uint256 expectedProfit = strategy.pendingYield();
-        
+
         if (expectedProfit > 0) {
             // Mint 收益 token 给 Strategy
             asset.mint(address(strategy), expectedProfit);
@@ -92,7 +93,7 @@ contract VaultStrategyFlowTest is Test {
         // 1. User1 存款（会自动触发投资）
         vm.prank(user1);
         uint256 shares1 = vault.deposit(1000e18);
-        
+
         assertEq(shares1, 1000e18);
         // 存款后会自动投资 80%
         assertEq(vault.totalInvestedAssets(), 800e18);
@@ -113,7 +114,7 @@ contract VaultStrategyFlowTest is Test {
 
         // 5. User1 赎回全部
         uint256 totalShares = vaultToken.balanceOf(user1);
-        
+
         vm.prank(user1);
         uint256 assetsReturned = vault.redeem(totalShares);
 
@@ -158,7 +159,7 @@ contract VaultStrategyFlowTest is Test {
 
         // 再过半年
         vm.warp(block.timestamp + 183 days);
-        
+
         // 再次模拟收益生成
         _simulateYieldGeneration();
 
@@ -203,7 +204,7 @@ contract VaultStrategyFlowTest is Test {
 
         // Share price 应该增加了
         assertGt(priceAfter, priceBefore);
-        
+
         // 大约增加了 16%（80% 投资 * 20% APY）
         uint256 expectedIncrease = priceBefore * 16 / 100;
         assertApproxEqRel(priceAfter, priceBefore + expectedIncrease, 0.02e18);
@@ -282,16 +283,16 @@ contract VaultStrategyFlowTest is Test {
         // harvest 后：investedAssets 减少 80 (800 * 10%)
         // 新的 invested = 720
         assertApproxEqAbs(vault.totalInvestedAssets(), 720e18, 1e18);
-        
+
         // totalAssets = 200 (idle) + 720 (invested) = 920
         assertApproxEqAbs(vault.totalAssets(), 920e18, 1e18);
 
         // User1 赎回全部
         uint256 user1Shares = vaultToken.balanceOf(user1);
-        
+
         vm.prank(user1);
         uint256 returned = vault.redeem(user1Shares);
-        
+
         // 应该拿回约 920 (亏损了 8%)
         assertApproxEqAbs(returned, 920e18, 1e18);
         assertLt(returned, 1000e18);
@@ -321,7 +322,7 @@ contract VaultStrategyFlowTest is Test {
 
         // 长时间累积收益
         vm.warp(block.timestamp + 365 days * 5);
-        
+
         // 模拟 5 年的收益生成
         _simulateYieldGeneration();
 
@@ -336,7 +337,7 @@ contract VaultStrategyFlowTest is Test {
 
         // 小额存款应该获得很少的 shares
         assertLt(shares, 1e18);
-        
+
         // Share price 不应该被稀释
         uint256 priceAfter = vault.sharePrice();
         assertApproxEqRel(priceAfter, priceBefore, 0.001e18);
@@ -348,12 +349,8 @@ contract VaultStrategyFlowTest is Test {
         vm.prank(user1);
         vault.deposit(1000e18);
 
-        (
-            address strategyAddress,
-            bool isStrategyActive,
-            uint256 investedAmount,
-            uint256 strategyTotalAssets
-        ) = vault.getStrategyInfo();
+        (address strategyAddress, bool isStrategyActive, uint256 investedAmount, uint256 strategyTotalAssets) =
+            vault.getStrategyInfo();
 
         assertEq(strategyAddress, address(strategy));
         assertTrue(isStrategyActive);
@@ -363,10 +360,7 @@ contract VaultStrategyFlowTest is Test {
 
     // ============ Fuzz Tests ============
 
-    function testFuzz_depositAndRedeem_withYield(
-        uint256 depositAmount,
-        uint256 timeElapsed
-    ) public {
+    function testFuzz_depositAndRedeem_withYield(uint256 depositAmount, uint256 timeElapsed) public {
         vm.assume(depositAmount >= vault.MINIMUM_SHARES() && depositAmount <= INITIAL_BALANCE / 2);
         vm.assume(timeElapsed > 0 && timeElapsed <= 365 days);
 

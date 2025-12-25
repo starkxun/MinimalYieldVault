@@ -9,33 +9,32 @@ import "@openzeppelin/contracts/access/Ownable.sol";
  * @dev 管理 Performance Fee 和 Withdrawal Fee
  */
 contract FeeManager is Ownable {
-    
     // ============ State Variables ============
-    
+
     /// @notice Performance Fee 比例（基点，10000 = 100%）
     uint256 public performanceFeeBps;
-    
+
     /// @notice Withdrawal Fee 比例（基点）
     uint256 public withdrawalFeeBps;
-    
+
     /// @notice 费用接收地址
     address public feeRecipient;
-    
+
     /// @notice 累计收取的 Performance Fee
     uint256 public totalPerformanceFeesCollected;
-    
+
     /// @notice 累计收取的 Withdrawal Fee
     uint256 public totalWithdrawalFeesCollected;
-    
+
     /// @notice 是否启用 Performance Fee
     bool public performanceFeeEnabled;
-    
+
     /// @notice 是否启用 Withdrawal Fee
     bool public withdrawalFeeEnabled;
 
     // ============ Constants ============
     uint256 public constant MAX_PERFORMANCE_FEE = 5000; // 最大 50%
-    uint256 public constant MAX_WITHDRAWAL_FEE = 500;   // 最大 5%
+    uint256 public constant MAX_WITHDRAWAL_FEE = 500; // 最大 5%
     uint256 private constant MAX_BPS = 10000;
 
     // ============ Events ============
@@ -53,19 +52,15 @@ contract FeeManager is Ownable {
     error InvalidFeeAmount();
 
     // ============ Constructor ============
-    constructor(
-        address _feeRecipient,
-        uint256 _performanceFeeBps,
-        uint256 _withdrawalFeeBps
-    ) Ownable(msg.sender) {
+    constructor(address _feeRecipient, uint256 _performanceFeeBps, uint256 _withdrawalFeeBps) Ownable(msg.sender) {
         if (_feeRecipient == address(0)) revert ZeroAddress();
         if (_performanceFeeBps > MAX_PERFORMANCE_FEE) revert FeeTooHigh();
         if (_withdrawalFeeBps > MAX_WITHDRAWAL_FEE) revert FeeTooHigh();
-        
+
         feeRecipient = _feeRecipient;
         performanceFeeBps = _performanceFeeBps;
         withdrawalFeeBps = _withdrawalFeeBps;
-        
+
         performanceFeeEnabled = _performanceFeeBps > 0;
         withdrawalFeeEnabled = _withdrawalFeeBps > 0;
     }
@@ -103,9 +98,9 @@ contract FeeManager is Ownable {
      */
     function recordPerformanceFee(uint256 feeAmount, uint256 profit) external onlyOwner {
         if (feeAmount > profit) revert InvalidFeeAmount();
-        
+
         totalPerformanceFeesCollected += feeAmount;
-        
+
         emit PerformanceFeeCollected(feeAmount, profit);
     }
 
@@ -116,9 +111,9 @@ contract FeeManager is Ownable {
      */
     function recordWithdrawalFee(uint256 feeAmount, uint256 withdrawn) external onlyOwner {
         if (feeAmount > withdrawn) revert InvalidFeeAmount();
-        
+
         totalWithdrawalFeesCollected += feeAmount;
-        
+
         emit WithdrawalFeeCollected(feeAmount, withdrawn);
     }
 
@@ -128,10 +123,10 @@ contract FeeManager is Ownable {
      */
     function setPerformanceFee(uint256 _performanceFeeBps) external onlyOwner {
         if (_performanceFeeBps > MAX_PERFORMANCE_FEE) revert FeeTooHigh();
-        
+
         uint256 oldFee = performanceFeeBps;
         performanceFeeBps = _performanceFeeBps;
-        
+
         emit PerformanceFeeUpdated(oldFee, _performanceFeeBps);
     }
 
@@ -141,10 +136,10 @@ contract FeeManager is Ownable {
      */
     function setWithdrawalFee(uint256 _withdrawalFeeBps) external onlyOwner {
         if (_withdrawalFeeBps > MAX_WITHDRAWAL_FEE) revert FeeTooHigh();
-        
+
         uint256 oldFee = withdrawalFeeBps;
         withdrawalFeeBps = _withdrawalFeeBps;
-        
+
         emit WithdrawalFeeUpdated(oldFee, _withdrawalFeeBps);
     }
 
@@ -154,10 +149,10 @@ contract FeeManager is Ownable {
      */
     function setFeeRecipient(address _feeRecipient) external onlyOwner {
         if (_feeRecipient == address(0)) revert ZeroAddress();
-        
+
         address oldRecipient = feeRecipient;
         feeRecipient = _feeRecipient;
-        
+
         emit FeeRecipientUpdated(oldRecipient, _feeRecipient);
     }
 
@@ -184,30 +179,22 @@ contract FeeManager is Ownable {
     /**
      * @notice 获取所有费用配置
      */
-    function getFeeConfiguration() external view returns (
-        uint256 perfFeeBps,
-        uint256 withdrawFeeBps,
-        address recipient,
-        bool perfEnabled,
-        bool withdrawEnabled
-    ) {
-        return (
-            performanceFeeBps,
-            withdrawalFeeBps,
-            feeRecipient,
-            performanceFeeEnabled,
-            withdrawalFeeEnabled
-        );
+    function getFeeConfiguration()
+        external
+        view
+        returns (uint256 perfFeeBps, uint256 withdrawFeeBps, address recipient, bool perfEnabled, bool withdrawEnabled)
+    {
+        return (performanceFeeBps, withdrawalFeeBps, feeRecipient, performanceFeeEnabled, withdrawalFeeEnabled);
     }
 
     /**
      * @notice 获取累计费用统计
      */
-    function getTotalFeesCollected() external view returns (
-        uint256 performanceFees,
-        uint256 withdrawalFees,
-        uint256 totalFees
-    ) {
+    function getTotalFeesCollected()
+        external
+        view
+        returns (uint256 performanceFees, uint256 withdrawalFees, uint256 totalFees)
+    {
         performanceFees = totalPerformanceFeesCollected;
         withdrawalFees = totalWithdrawalFeesCollected;
         totalFees = performanceFees + withdrawalFees;

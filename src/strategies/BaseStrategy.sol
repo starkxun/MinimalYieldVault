@@ -13,16 +13,16 @@ abstract contract BaseStrategy {
     using SafeERC20 for IERC20;
 
     // ============ State Variables ============
-    
+
     /// @notice Vault 地址（只有 Vault 能调用关键函数）
     address public immutable vault;
-    
+
     /// @notice 底层资产
     IERC20 public immutable asset;
-    
+
     /// @notice Strategy 中投资的总资产
     uint256 public investedAssets;
-    
+
     /// @notice Strategy 是否激活
     bool public isActive;
 
@@ -66,15 +66,15 @@ abstract contract BaseStrategy {
      */
     function invest(uint256 amount) external virtual onlyVault whenActive {
         if (amount == 0) return;
-        
+
         // 从 Vault 转入资产
         asset.safeTransferFrom(vault, address(this), amount);
-        
+
         investedAssets += amount;
-        
+
         // 子类实现具体的投资逻辑
         _invest(amount);
-        
+
         emit Invested(amount);
     }
 
@@ -86,14 +86,14 @@ abstract contract BaseStrategy {
     function harvest() external virtual onlyVault whenActive returns (uint256 profit, uint256 loss) {
         // 子类实现具体的收获逻辑
         (profit, loss) = _harvest();
-        
+
         // 更新投资金额
         if (profit > loss) {
             investedAssets += (profit - loss);
         } else {
             investedAssets -= (loss - profit);
         }
-        
+
         emit Harvested(profit, loss);
     }
 
@@ -105,15 +105,15 @@ abstract contract BaseStrategy {
     function withdraw(uint256 amount) external virtual onlyVault returns (uint256 actualAmount) {
         if (amount == 0) return 0;
         if (amount > investedAssets) revert InsufficientAssets();
-        
+
         // 子类实现具体的取回逻辑
         actualAmount = _withdraw(amount);
-        
+
         investedAssets -= actualAmount;
-        
+
         // 转回给 Vault
         asset.safeTransfer(vault, actualAmount);
-        
+
         emit Withdrawn(actualAmount);
     }
 
@@ -123,15 +123,15 @@ abstract contract BaseStrategy {
      */
     function emergencyWithdraw() external virtual onlyVault returns (uint256 amount) {
         amount = _emergencyWithdraw();
-        
+
         investedAssets = 0;
         isActive = false;
-        
+
         // 转回给 Vault
         if (amount > 0) {
             asset.safeTransfer(vault, amount);
         }
-        
+
         emit EmergencyWithdrawn(amount);
     }
 

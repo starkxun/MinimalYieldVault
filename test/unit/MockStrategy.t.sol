@@ -7,6 +7,7 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 contract MockERC20 is ERC20 {
     constructor() ERC20("Mock Token", "MOCK") {}
+
     function mint(address to, uint256 amount) external {
         _mint(to, amount);
     }
@@ -19,20 +20,20 @@ contract MockERC20 is ERC20 {
 contract MockStrategyTest is Test {
     MockStrategy public strategy;
     MockERC20 public asset;
-    
+
     address public vault = address(1);
     address public user = address(2);
-    
+
     uint256 constant INITIAL_BALANCE = 10000e18;
     uint256 constant APY_10_PERCENT = 1000; // 10% APY
 
     function setUp() public {
         asset = new MockERC20();
-        
+
         // 从 vault 地址部署 strategy
         vm.prank(vault);
         strategy = new MockStrategy(vault, address(asset), APY_10_PERCENT);
-        
+
         // 给 vault mint 一些资产
         asset.mint(vault, INITIAL_BALANCE);
     }
@@ -52,7 +53,7 @@ contract MockStrategyTest is Test {
 
     function test_invest() public {
         uint256 investAmount = 1000e18;
-        
+
         vm.startPrank(vault);
         asset.approve(address(strategy), investAmount);
         strategy.invest(investAmount);
@@ -84,7 +85,7 @@ contract MockStrategyTest is Test {
         vm.startPrank(vault);
         asset.approve(address(strategy), 1000e18);
         strategy.invest(1000e18);
-        
+
         (uint256 profit, uint256 loss) = strategy.harvest();
         vm.stopPrank();
 
@@ -94,15 +95,15 @@ contract MockStrategyTest is Test {
 
     function test_harvest_withYield() public {
         uint256 investAmount = 1000e18;
-        
+
         // 投资
         vm.startPrank(vault);
         asset.approve(address(strategy), investAmount);
         strategy.invest(investAmount);
-        
+
         // 时间流逝 365 天（1年）
         vm.warp(block.timestamp + 365 days);
-        
+
         // 收获
         (uint256 profit, uint256 loss) = strategy.harvest();
         vm.stopPrank();
@@ -115,18 +116,18 @@ contract MockStrategyTest is Test {
 
     function test_harvest_multipleHarvests() public {
         uint256 investAmount = 1000e18;
-        
+
         vm.startPrank(vault);
         asset.approve(address(strategy), investAmount);
         strategy.invest(investAmount);
-        
+
         // 第一次收获（半年后）
         vm.warp(block.timestamp + 182 days);
-        (uint256 profit1, ) = strategy.harvest();
-        
+        (uint256 profit1,) = strategy.harvest();
+
         // 第二次收获（再半年后）
         vm.warp(block.timestamp + 183 days);
-        (uint256 profit2, ) = strategy.harvest();
+        (uint256 profit2,) = strategy.harvest();
         vm.stopPrank();
 
         // 两次收获的总和应该约等于 1 年的收益
@@ -139,16 +140,16 @@ contract MockStrategyTest is Test {
 
     function test_harvest_withLoss() public {
         uint256 investAmount = 1000e18;
-        
+
         vm.startPrank(vault);
         asset.approve(address(strategy), investAmount);
         strategy.invest(investAmount);
-        
+
         // 启用亏损模拟：10% 亏损
         strategy.toggleLossSimulation(true, 1000);
-        
+
         vm.warp(block.timestamp + 365 days);
-        
+
         (uint256 profit, uint256 loss) = strategy.harvest();
         vm.stopPrank();
 
@@ -160,14 +161,14 @@ contract MockStrategyTest is Test {
 
     function test_withdraw() public {
         uint256 investAmount = 1000e18;
-        
+
         vm.startPrank(vault);
         asset.approve(address(strategy), investAmount);
         strategy.invest(investAmount);
-        
+
         uint256 withdrawAmount = 300e18;
         uint256 balanceBefore = asset.balanceOf(vault);
-        
+
         uint256 withdrawn = strategy.withdraw(withdrawAmount);
         vm.stopPrank();
 
@@ -180,7 +181,7 @@ contract MockStrategyTest is Test {
         vm.startPrank(vault);
         asset.approve(address(strategy), 1000e18);
         strategy.invest(1000e18);
-        
+
         vm.expectRevert(BaseStrategy.InsufficientAssets.selector);
         strategy.withdraw(2000e18);
         vm.stopPrank();
@@ -190,11 +191,11 @@ contract MockStrategyTest is Test {
 
     function test_emergencyWithdraw() public {
         uint256 investAmount = 1000e18;
-        
+
         vm.startPrank(vault);
         asset.approve(address(strategy), investAmount);
         strategy.invest(investAmount);
-        
+
         uint256 amount = strategy.emergencyWithdraw();
         vm.stopPrank();
 
@@ -208,7 +209,7 @@ contract MockStrategyTest is Test {
 
     function test_totalAssets() public {
         uint256 investAmount = 1000e18;
-        
+
         vm.startPrank(vault);
         asset.approve(address(strategy), investAmount);
         strategy.invest(investAmount);
@@ -219,7 +220,7 @@ contract MockStrategyTest is Test {
 
         // 时间流逝
         vm.warp(block.timestamp + 365 days);
-        
+
         // 应该包含未收获的收益
         uint256 expected = investAmount + 100e18; // 10% APY
         assertApproxEqRel(strategy.totalAssets(), expected, 0.01e18);
@@ -227,7 +228,7 @@ contract MockStrategyTest is Test {
 
     function test_pendingYield() public {
         uint256 investAmount = 1000e18;
-        
+
         vm.startPrank(vault);
         asset.approve(address(strategy), investAmount);
         strategy.invest(investAmount);
@@ -235,16 +236,16 @@ contract MockStrategyTest is Test {
 
         // 时间流逝半年
         vm.warp(block.timestamp + 182 days);
-        
+
         uint256 pending = strategy.pendingYield();
-        
+
         // 半年应该有约 50e18 的收益
         assertApproxEqRel(pending, 50e18, 0.02e18);
     }
 
     function test_expectedYearlyYield() public {
         uint256 investAmount = 1000e18;
-        
+
         vm.startPrank(vault);
         asset.approve(address(strategy), investAmount);
         strategy.invest(investAmount);
@@ -258,7 +259,7 @@ contract MockStrategyTest is Test {
 
     function test_setAPY() public {
         uint256 newAPY = 2000; // 20%
-        
+
         vm.prank(vault);
         strategy.setAPY(newAPY);
 
@@ -308,16 +309,16 @@ contract MockStrategyTest is Test {
 
     function testFuzz_harvest_variableTime(uint256 timeElapsed) public {
         vm.assume(timeElapsed > 0 && timeElapsed <= 365 days * 10);
-        
+
         uint256 investAmount = 1000e18;
-        
+
         vm.startPrank(vault);
         asset.approve(address(strategy), investAmount);
         strategy.invest(investAmount);
-        
+
         vm.warp(block.timestamp + timeElapsed);
-        
-        (uint256 profit, ) = strategy.harvest();
+
+        (uint256 profit,) = strategy.harvest();
         vm.stopPrank();
 
         // 收益应该随时间线性增长

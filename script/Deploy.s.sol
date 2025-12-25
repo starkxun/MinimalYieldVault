@@ -16,31 +16,31 @@ contract MockERC20 {
     string public symbol;
     uint8 public decimals;
     uint256 public totalSupply;
-    
+
     mapping(address => uint256) public balanceOf;
     mapping(address => mapping(address => uint256)) public allowance;
-    
+
     event Transfer(address indexed from, address indexed to, uint256 value);
     event Approval(address indexed owner, address indexed spender, uint256 value);
-    
+
     constructor(string memory _name, string memory _symbol, uint8 _decimals) {
         name = _name;
         symbol = _symbol;
         decimals = _decimals;
     }
-    
+
     function mint(address to, uint256 amount) external {
         balanceOf[to] += amount;
         totalSupply += amount;
         emit Transfer(address(0), to, amount);
     }
-    
+
     function approve(address spender, uint256 amount) external returns (bool) {
         allowance[msg.sender][spender] = amount;
         emit Approval(msg.sender, spender, amount);
         return true;
     }
-    
+
     function transfer(address to, uint256 amount) external returns (bool) {
         require(balanceOf[msg.sender] >= amount, "Insufficient balance");
         balanceOf[msg.sender] -= amount;
@@ -48,7 +48,7 @@ contract MockERC20 {
         emit Transfer(msg.sender, to, amount);
         return true;
     }
-    
+
     function transferFrom(address from, address to, uint256 amount) external returns (bool) {
         require(balanceOf[from] >= amount, "Insufficient balance");
         require(allowance[from][msg.sender] >= amount, "Insufficient allowance");
@@ -79,7 +79,7 @@ contract Deploy is Script {
     // 配置参数
     uint256 constant INITIAL_MINT = 1_000_000 * 1e18; // 给部署者 100 万测试代币
     uint256 constant PERFORMANCE_FEE = 1000; // 10% (1000 basis points)
-    uint256 constant WITHDRAWAL_FEE = 100;   // 1% (100 basis points)
+    uint256 constant WITHDRAWAL_FEE = 100; // 1% (100 basis points)
 
     function run() external {
         // 获取部署者私钥（从环境变量或使用默认的 Anvil 账户）
@@ -105,9 +105,9 @@ contract Deploy is Script {
         console.log("2. Deploying VaultAccessControl...");
         // VaultAccessControl 需要 3 个参数: strategist, guardian, keeper
         accessControl = new VaultAccessControl(
-            deployer,  // strategist (策略管理者)
-            deployer,  // guardian (紧急守护者)
-            deployer   // keeper (自动化管理者)
+            deployer, // strategist (策略管理者)
+            deployer, // guardian (紧急守护者)
+            deployer // keeper (自动化管理者)
         );
         console.log("   VaultAccessControl deployed at:", address(accessControl));
 
@@ -116,9 +116,9 @@ contract Deploy is Script {
         console.log("3. Deploying FeeManager...");
         // FeeManager 需要 3 个参数: feeRecipient, performanceFeeBps, withdrawalFeeBps
         feeManager = new FeeManager(
-            deployer,         // fee recipient (费用接收地址)
-            PERFORMANCE_FEE,  // performance fee (10% = 1000 bps)
-            100               // withdrawal fee (1% = 100 bps)
+            deployer, // fee recipient (费用接收地址)
+            PERFORMANCE_FEE, // performance fee (10% = 1000 bps)
+            100 // withdrawal fee (1% = 100 bps)
         );
         console.log("   FeeManager deployed at:", address(feeManager));
         console.log("   Performance Fee: %s bps (%s%%)", PERFORMANCE_FEE, PERFORMANCE_FEE / 100);

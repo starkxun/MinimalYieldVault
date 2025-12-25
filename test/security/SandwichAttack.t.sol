@@ -9,6 +9,7 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 contract MockERC20 is ERC20 {
     constructor() ERC20("Mock Token", "MOCK") {}
+
     function mint(address to, uint256 amount) external {
         _mint(to, amount);
     }
@@ -106,9 +107,7 @@ contract SandwichAttackTest is Test {
         console.log("Attacker redeems, gets:", attackerReturned);
 
         // 分析攻击效果
-        uint256 attackerProfit = attackerReturned > attackAmount 
-            ? attackerReturned - attackAmount 
-            : 0;
+        uint256 attackerProfit = attackerReturned > attackAmount ? attackerReturned - attackAmount : 0;
         console.log("Attacker profit:", attackerProfit);
 
         // Victim 的损失
@@ -137,7 +136,7 @@ contract SandwichAttackTest is Test {
     function test_sandwichAttack_withdrawSandwich() public {
         // 修复：确保有足够余额完成所有操作
         // victim 现在有 200_000e18，足够存 50_000
-        
+
         vm.prank(victim);
         vault.deposit(50_000e18);
 
@@ -171,8 +170,9 @@ contract SandwichAttackTest is Test {
         console.log("Attacker got back:", attackerReturned);
 
         // ✅ 在稳定的 Vault 中，这种攻击效果有限
-        assertApproxEqRel(attackerReturned, 30_000e18, 0.01e18,
-            "Attacker cannot profit significantly from withdrawal sandwich");
+        assertApproxEqRel(
+            attackerReturned, 30_000e18, 0.01e18, "Attacker cannot profit significantly from withdrawal sandwich"
+        );
     }
 
     /**
@@ -226,7 +226,7 @@ contract SandwichAttackTest is Test {
         // ✅ 分析：JIT 攻击的效果
         // 攻击者通过短期投入，稀释了长期持有者的收益
         // 但攻击者也承担了资金占用成本
-        
+
         console.log("\nAnalysis:");
         console.log("Total yield:", pendingYield);
         console.log("Attacker got:", attackerProfit);
@@ -268,23 +268,23 @@ contract SandwichAttackTest is Test {
         console.log("\n1. Frequent Harvest:");
         console.log("   - Reduces pending yield");
         console.log("   - Less profit for JIT attackers");
-        
+
         console.log("\n2. Harvest Fee (Performance Fee):");
         console.log("   - Charges fee on profits");
         console.log("   - Makes short-term attacks less profitable");
-        
+
         console.log("\n3. Minimum Hold Time:");
         console.log("   - Require users to hold for X time");
         console.log("   - Prevents instant deposit-harvest-withdraw");
-        
+
         console.log("\n4. Withdrawal Queue:");
         console.log("   - Delays between redeem request and execution");
         console.log("   - Prevents frontrunning");
-        
+
         console.log("\n5. Fair Yield Distribution:");
         console.log("   - Weight by time-held, not just amount");
         console.log("   - Rewards long-term holders");
-        
+
         console.log("\nCurrent Implementation:");
         console.log("Auto-invest reduces idle funds");
         console.log("Can add Performance Fee (FeeManager ready)");
@@ -296,16 +296,16 @@ contract SandwichAttackTest is Test {
 
     function _deployNewVault() internal returns (MinimalVault) {
         address deployer = address(uint160(block.timestamp)); // 唯一地址
-        
+
         vm.startPrank(deployer);
         VaultToken newToken = new VaultToken("New Vault", "nVault");
 
         MinimalVault newVault = new MinimalVault(address(asset), address(newToken), 8000);
-        
+
         newToken.setVault(address(newVault));
 
         MockStrategy newStrategy = new MockStrategy(address(newVault), address(asset), 1000);
-        
+
         newVault.setStrategy(address(newStrategy));
         vm.stopPrank();
 

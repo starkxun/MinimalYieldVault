@@ -10,7 +10,7 @@ import "../../src/core/VaultToken.sol";
  */
 contract VaultTokenTest is Test {
     VaultToken public vaultToken;
-    
+
     address public owner = address(1);
     address public vault = address(2);
     address public user = address(3);
@@ -56,7 +56,7 @@ contract VaultTokenTest is Test {
     function test_setVault_RevertIf_AlreadySet() public {
         vm.startPrank(owner);
         vaultToken.setVault(vault);
-        
+
         vm.expectRevert(VaultToken.VaultAlreadySet.selector);
         vaultToken.setVault(address(4));
         vm.stopPrank();
