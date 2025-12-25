@@ -451,7 +451,7 @@ git push origin feature/my-feature
 
 ## 🤝 贡献指南
 
-我们欢迎所有形式的贡献！
+欢迎所有形式的贡献！
 
 ### 如何贡献
 
@@ -525,18 +525,10 @@ git push origin feature/my-feature
 
 ---
 
-## 📞 联系方式
-
-- **项目主页**: [GitHub Repository](https://github.com/your-username/minimal-yield-vault)
-- **问题反馈**: [Issues](https://github.com/your-username/minimal-yield-vault/issues)
-- **讨论**: [Discussions](https://github.com/your-username/minimal-yield-vault/discussions)
-
----
-
 <div align="center">
 
-**如果这个项目对你有帮助，请给我们一个 ⭐️**
+**如果这个项目对你有帮助，请给我一个 ⭐️**
 
-Made with ❤️ by Minimal Yield Vault Team
+Made with ❤️ by Starkxun
 
 </div>

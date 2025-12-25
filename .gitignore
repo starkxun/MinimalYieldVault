@@ -21,6 +21,8 @@ out/
 cache/
 lib/
 *.dbg
+broadcast/
+.github/
 
 # OS / Editor
 .DS_Store
