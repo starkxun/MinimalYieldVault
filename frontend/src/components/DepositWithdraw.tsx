@@ -30,6 +30,22 @@ export default function DepositWithdraw() {
     args: address ? [address] : undefined,
   });
 
+  // 动态读取 asset 和 share 的 decimals（修复不同 token decimals 导致的 amount 编码错误）
+  const { data: assetDecimalsRaw } = useReadContract({
+    address: addresses.asset as `0x${string}`,
+    abi: ERC20_ABI,
+    functionName: 'decimals',
+  });
+
+  const { data: shareDecimalsRaw } = useReadContract({
+    address: addresses.vaultToken as `0x${string}`,
+    abi: ERC20_ABI,
+    functionName: 'decimals',
+  });
+
+  const assetDecimals = assetDecimalsRaw ? Number(assetDecimalsRaw as any) : 18;
+  const shareDecimals = shareDecimalsRaw ? Number(shareDecimalsRaw as any) : 18;
+
   const { data: shareBalance } = useReadContract({
     address: addresses.vaultToken as `0x${string}`,
     abi: ERC20_ABI,
@@ -48,14 +64,14 @@ export default function DepositWithdraw() {
     address: addresses.vault as `0x${string}`,
     abi: VAULT_ABI,
     functionName: 'previewDeposit',
-    args: amount ? [parseUnits(amount, 18)] : undefined,
+    args: amount ? [parseUnits(amount, assetDecimals)] : undefined,
   });
 
   const { data: previewAssets } = useReadContract({
     address: addresses.vault as `0x${string}`,
     abi: VAULT_ABI,
     functionName: 'previewRedeem',
-    args: amount ? [parseUnits(amount, 18)] : undefined,
+    args: amount ? [parseUnits(amount, shareDecimals)] : undefined,
   });
 
   // Write contracts
@@ -85,7 +101,7 @@ export default function DepositWithdraw() {
         address: addresses.asset as `0x${string}`,
         abi: ERC20_ABI,
         functionName: 'approve',
-        args: [addresses.vault, parseUnits(amount, 18)],
+        args: [addresses.vault, parseUnits(amount, assetDecimals)],
       });
     } finally {
       setIsApproving(false);
@@ -98,7 +114,7 @@ export default function DepositWithdraw() {
       address: addresses.vault as `0x${string}`,
       abi: VAULT_ABI,
       functionName: 'deposit',
-      args: [parseUnits(amount, 18)],
+      args: [parseUnits(amount, assetDecimals)],
     });
   };
 
@@ -108,17 +124,17 @@ export default function DepositWithdraw() {
       address: addresses.vault as `0x${string}`,
       abi: VAULT_ABI,
       functionName: 'redeem',
-      args: [parseUnits(amount, 18)],
+      args: [parseUnits(amount, shareDecimals)],
     });
   };
 
-  const needsApproval = activeTab === 'deposit' && allowance && amount
-    ? parseUnits(amount, 18) > allowance
+  const needsApproval = activeTab === 'deposit' && amount && (allowance !== undefined && allowance !== null)
+    ? parseUnits(amount, assetDecimals) > (allowance as bigint)
     : false;
 
   const maxBalance = activeTab === 'deposit'
-    ? assetBalance ? formatUnits(assetBalance, 18) : '0'
-    : shareBalance ? formatUnits(shareBalance, 18) : '0';
+    ? assetBalance ? formatUnits(assetBalance, assetDecimals) : '0'
+    : shareBalance ? formatUnits(shareBalance, shareDecimals) : '0';
 
   return (
     <div className="rounded-xl border border-white/10 bg-white/5 backdrop-blur-sm p-6">
@@ -196,8 +212,8 @@ export default function DepositWithdraw() {
               <span className="text-gray-400">You will receive</span>
               <span className="text-white font-medium">
                 {activeTab === 'deposit'
-                  ? `${previewShares ? formatUnits(previewShares, 18) : '0'} vUSDC`
-                  : `${previewAssets ? formatUnits(previewAssets, 18) : '0'} USDC`}
+                  ? `${previewShares ? formatUnits(previewShares, shareDecimals) : '0'} vUSDC`
+                    : `${previewAssets ? formatUnits(previewAssets, assetDecimals) : '0'} USDC`}
               </span>
             </div>
             <div className="flex items-center justify-between text-sm">

@@ -192,13 +192,18 @@ contract Deploy is Script {
      * @dev 优先使用环境变量，否则使用 Anvil 默认账户
      */
     function getDeployerPrivateKey() internal view returns (uint256) {
-        // 尝试从环境变量读取
+        // 优先使用环境变量 PRIVATE_KEY，其次尝试 PRIVATE_KEY_FOX，再 fallback 到 Anvil 默认私钥
         try vm.envUint("PRIVATE_KEY") returns (uint256 privateKey) {
             return privateKey;
         } catch {
-            // 使用 Anvil 第一个默认账户的私钥
-            console.log("No PRIVATE_KEY found, using Anvil default account");
-            return 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80;
+            // 尝试另一个常见变量名（例如 CI/脚本中可能使用的名称）
+            try vm.envUint("PRIVATE_KEY_FOX") returns (uint256 privateKey2) {
+                return privateKey2;
+            } catch {
+                // 使用 Anvil 第一个默认账户的私钥
+                console.log("No PRIVATE_KEY/_FOX found, using Anvil default account");
+                return 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80;
+            }
         }
     }
 

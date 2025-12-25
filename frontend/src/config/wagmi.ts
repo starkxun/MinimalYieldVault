@@ -1,12 +1,11 @@
 import { getDefaultConfig } from '@rainbow-me/rainbowkit';
 import { sepolia, mainnet, hardhat } from 'wagmi/chains';
-import type { Chain } from 'wagmi';
+import type { Chain } from 'wagmi/chains';
 
 // 定义本地 Anvil 链（使其在钱包/网络选择中显示为 'Anvil'）
 export const anvilChain: Chain = {
   id: 31337,
   name: 'Anvil',
-  network: 'anvil',
   nativeCurrency: { name: 'Ethereum', symbol: 'ETH', decimals: 18 },
   rpcUrls: {
     default: { http: ['http://127.0.0.1:8545'] },
@@ -19,7 +18,7 @@ export const anvilChain: Chain = {
 };
 
 // 根据环境变量选择链，并按 chain.id 去重（避免 Anvil 与 Hardhat 同时显示）
-const initialChains = [
+const initialChains: Chain[] = [
   ...(import.meta.env.VITE_ENABLE_MAINNET === 'true' ? [mainnet] : []),
   sepolia,
   // 加入本地 Anvil 链和 Hardhat（两者链 id 相同，Anvil 提供可读名称）
@@ -29,7 +28,7 @@ const initialChains = [
 
 // 去重 helpers：保留首次出现的 chain（按 id）
 const seen = new Set<number>();
-const chains: typeof initialChains = initialChains.filter((c) => {
+const chains: Chain[] = initialChains.filter((c) => {
   if (seen.has(c.id)) return false;
   seen.add(c.id);
   return true;
@@ -38,7 +37,7 @@ const chains: typeof initialChains = initialChains.filter((c) => {
 export const config = getDefaultConfig({
   appName: 'Yield Vault',
   projectId: import.meta.env.VITE_WALLETCONNECT_PROJECT_ID || 'YOUR_PROJECT_ID',
-  chains,
+  chains: chains as unknown as any,
   ssr: false,
 });
 

@@ -76,8 +76,8 @@ export default function Dashboard() {
             <p>&copy; 2024 Yield Vault. All rights reserved.</p>
             <div className="flex space-x-6 mt-4 md:mt-0">
               <a href="#" className="hover:text-white transition-colors">Docs</a>
-              <a href="#" className="hover:text-white transition-colors">GitHub</a>
-              <a href="#" className="hover:text-white transition-colors">Discord</a>
+              <a href="https://github.com/starkxun" className="hover:text-white transition-colors">GitHub</a>
+              <a href="https://x.com/starkxun" className="hover:text-white transition-colors">Twitter</a>
             </div>
           </div>
         </div>
